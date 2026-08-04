@@ -1,0 +1,564 @@
+{
+  "_comment": [
+    "Ground truth for the VAT conversion in build_prices.py, extracted from a",
+    "GET /pricing capture taken 2026-07-28 \u2014 after the 15 June 2026 adjustment,",
+    "so these ARE the 'new' prices of that adjustment, straight from the API.",
+    "",
+    "Hetzner's published adjustment table quotes GROSS (19% German VAT). This",
+    "file is what proves the gross -> net conversion is exact: the generator",
+    "derives the new net prices from the published gross figures and refuses to",
+    "emit anything unless every one of them matches the API values below.",
+    "The same conversion then applies to the 'old' column, for which no API",
+    "capture can exist."
+  ],
+  "captured": "2026-07-28",
+  "vat_rate": "19.000000",
+  "prices_net": [
+    {
+      "name": "cax11",
+      "location": "fsn1",
+      "monthly_net": "5.99",
+      "hourly_net": "0.0096"
+    },
+    {
+      "name": "cax11",
+      "location": "hel1",
+      "monthly_net": "5.99",
+      "hourly_net": "0.0096"
+    },
+    {
+      "name": "cax11",
+      "location": "nbg1",
+      "monthly_net": "5.99",
+      "hourly_net": "0.0096"
+    },
+    {
+      "name": "cax21",
+      "location": "fsn1",
+      "monthly_net": "10.49",
+      "hourly_net": "0.0168"
+    },
+    {
+      "name": "cax21",
+      "location": "hel1",
+      "monthly_net": "10.49",
+      "hourly_net": "0.0168"
+    },
+    {
+      "name": "cax21",
+      "location": "nbg1",
+      "monthly_net": "10.49",
+      "hourly_net": "0.0168"
+    },
+    {
+      "name": "cax31",
+      "location": "fsn1",
+      "monthly_net": "20.99",
+      "hourly_net": "0.0336"
+    },
+    {
+      "name": "cax31",
+      "location": "hel1",
+      "monthly_net": "20.99",
+      "hourly_net": "0.0336"
+    },
+    {
+      "name": "cax31",
+      "location": "nbg1",
+      "monthly_net": "20.99",
+      "hourly_net": "0.0336"
+    },
+    {
+      "name": "cax41",
+      "location": "fsn1",
+      "monthly_net": "40.99",
+      "hourly_net": "0.0657"
+    },
+    {
+      "name": "cax41",
+      "location": "hel1",
+      "monthly_net": "40.99",
+      "hourly_net": "0.0657"
+    },
+    {
+      "name": "cax41",
+      "location": "nbg1",
+      "monthly_net": "40.99",
+      "hourly_net": "0.0657"
+    },
+    {
+      "name": "ccx13",
+      "location": "ash",
+      "monthly_net": "43.49",
+      "hourly_net": "0.0697"
+    },
+    {
+      "name": "ccx13",
+      "location": "fsn1",
+      "monthly_net": "42.99",
+      "hourly_net": "0.0689"
+    },
+    {
+      "name": "ccx13",
+      "location": "hel1",
+      "monthly_net": "42.99",
+      "hourly_net": "0.0689"
+    },
+    {
+      "name": "ccx13",
+      "location": "hil",
+      "monthly_net": "43.49",
+      "hourly_net": "0.0697"
+    },
+    {
+      "name": "ccx13",
+      "location": "nbg1",
+      "monthly_net": "42.99",
+      "hourly_net": "0.0689"
+    },
+    {
+      "name": "ccx13",
+      "location": "sin",
+      "monthly_net": "53.99",
+      "hourly_net": "0.0865"
+    },
+    {
+      "name": "ccx23",
+      "location": "ash",
+      "monthly_net": "87.49",
+      "hourly_net": "0.1402"
+    },
+    {
+      "name": "ccx23",
+      "location": "fsn1",
+      "monthly_net": "85.99",
+      "hourly_net": "0.1378"
+    },
+    {
+      "name": "ccx23",
+      "location": "hel1",
+      "monthly_net": "85.99",
+      "hourly_net": "0.1378"
+    },
+    {
+      "name": "ccx23",
+      "location": "hil",
+      "monthly_net": "87.49",
+      "hourly_net": "0.1402"
+    },
+    {
+      "name": "ccx23",
+      "location": "nbg1",
+      "monthly_net": "85.99",
+      "hourly_net": "0.1378"
+    },
+    {
+      "name": "ccx23",
+      "location": "sin",
+      "monthly_net": "108.49",
+      "hourly_net": "0.1739"
+    },
+    {
+      "name": "ccx33",
+      "location": "ash",
+      "monthly_net": "140.99",
+      "hourly_net": "0.2259"
+    },
+    {
+      "name": "ccx33",
+      "location": "fsn1",
+      "monthly_net": "138.49",
+      "hourly_net": "0.2219"
+    },
+    {
+      "name": "ccx33",
+      "location": "hel1",
+      "monthly_net": "138.49",
+      "hourly_net": "0.2219"
+    },
+    {
+      "name": "ccx33",
+      "location": "hil",
+      "monthly_net": "140.99",
+      "hourly_net": "0.2259"
+    },
+    {
+      "name": "ccx33",
+      "location": "nbg1",
+      "monthly_net": "138.49",
+      "hourly_net": "0.2219"
+    },
+    {
+      "name": "ccx33",
+      "location": "sin",
+      "monthly_net": "174.49",
+      "hourly_net": "0.2796"
+    },
+    {
+      "name": "ccx43",
+      "location": "ash",
+      "monthly_net": "279.49",
+      "hourly_net": "0.4479"
+    },
+    {
+      "name": "ccx43",
+      "location": "fsn1",
+      "monthly_net": "275.99",
+      "hourly_net": "0.4423"
+    },
+    {
+      "name": "ccx43",
+      "location": "hel1",
+      "monthly_net": "275.99",
+      "hourly_net": "0.4423"
+    },
+    {
+      "name": "ccx43",
+      "location": "hil",
+      "monthly_net": "279.49",
+      "hourly_net": "0.4479"
+    },
+    {
+      "name": "ccx43",
+      "location": "nbg1",
+      "monthly_net": "275.99",
+      "hourly_net": "0.4423"
+    },
+    {
+      "name": "ccx43",
+      "location": "sin",
+      "monthly_net": "340.99",
+      "hourly_net": "0.5465"
+    },
+    {
+      "name": "ccx53",
+      "location": "ash",
+      "monthly_net": "538.49",
+      "hourly_net": "0.863"
+    },
+    {
+      "name": "ccx53",
+      "location": "fsn1",
+      "monthly_net": "533.49",
+      "hourly_net": "0.855"
+    },
+    {
+      "name": "ccx53",
+      "location": "hel1",
+      "monthly_net": "533.49",
+      "hourly_net": "0.855"
+    },
+    {
+      "name": "ccx53",
+      "location": "hil",
+      "monthly_net": "538.49",
+      "hourly_net": "0.863"
+    },
+    {
+      "name": "ccx53",
+      "location": "nbg1",
+      "monthly_net": "533.49",
+      "hourly_net": "0.855"
+    },
+    {
+      "name": "ccx53",
+      "location": "sin",
+      "monthly_net": "651.99",
+      "hourly_net": "1.0449"
+    },
+    {
+      "name": "ccx63",
+      "location": "ash",
+      "monthly_net": "859.99",
+      "hourly_net": "1.3782"
+    },
+    {
+      "name": "ccx63",
+      "location": "fsn1",
+      "monthly_net": "853.49",
+      "hourly_net": "1.3678"
+    },
+    {
+      "name": "ccx63",
+      "location": "hel1",
+      "monthly_net": "853.49",
+      "hourly_net": "1.3678"
+    },
+    {
+      "name": "ccx63",
+      "location": "hil",
+      "monthly_net": "859.99",
+      "hourly_net": "1.3782"
+    },
+    {
+      "name": "ccx63",
+      "location": "nbg1",
+      "monthly_net": "853.49",
+      "hourly_net": "1.3678"
+    },
+    {
+      "name": "ccx63",
+      "location": "sin",
+      "monthly_net": "1036.49",
+      "hourly_net": "1.661"
+    },
+    {
+      "name": "cpx11",
+      "location": "ash",
+      "monthly_net": "17.49",
+      "hourly_net": "0.028"
+    },
+    {
+      "name": "cpx11",
+      "location": "hil",
+      "monthly_net": "17.49",
+      "hourly_net": "0.028"
+    },
+    {
+      "name": "cpx12",
+      "location": "sin",
+      "monthly_net": "15.49",
+      "hourly_net": "0.0248"
+    },
+    {
+      "name": "cpx21",
+      "location": "ash",
+      "monthly_net": "31.99",
+      "hourly_net": "0.0513"
+    },
+    {
+      "name": "cpx21",
+      "location": "hil",
+      "monthly_net": "31.99",
+      "hourly_net": "0.0513"
+    },
+    {
+      "name": "cpx22",
+      "location": "fsn1",
+      "monthly_net": "19.49",
+      "hourly_net": "0.0312"
+    },
+    {
+      "name": "cpx22",
+      "location": "hel1",
+      "monthly_net": "19.49",
+      "hourly_net": "0.0312"
+    },
+    {
+      "name": "cpx22",
+      "location": "nbg1",
+      "monthly_net": "19.49",
+      "hourly_net": "0.0312"
+    },
+    {
+      "name": "cpx22",
+      "location": "sin",
+      "monthly_net": "26.49",
+      "hourly_net": "0.0425"
+    },
+    {
+      "name": "cpx31",
+      "location": "ash",
+      "monthly_net": "62.49",
+      "hourly_net": "0.1001"
+    },
+    {
+      "name": "cpx31",
+      "location": "hil",
+      "monthly_net": "62.49",
+      "hourly_net": "0.1001"
+    },
+    {
+      "name": "cpx32",
+      "location": "fsn1",
+      "monthly_net": "35.49",
+      "hourly_net": "0.0569"
+    },
+    {
+      "name": "cpx32",
+      "location": "hel1",
+      "monthly_net": "35.49",
+      "hourly_net": "0.0569"
+    },
+    {
+      "name": "cpx32",
+      "location": "nbg1",
+      "monthly_net": "35.49",
+      "hourly_net": "0.0569"
+    },
+    {
+      "name": "cpx32",
+      "location": "sin",
+      "monthly_net": "48.99",
+      "hourly_net": "0.0785"
+    },
+    {
+      "name": "cpx41",
+      "location": "ash",
+      "monthly_net": "120.49",
+      "hourly_net": "0.1931"
+    },
+    {
+      "name": "cpx41",
+      "location": "hil",
+      "monthly_net": "120.49",
+      "hourly_net": "0.1931"
+    },
+    {
+      "name": "cpx42",
+      "location": "fsn1",
+      "monthly_net": "69.49",
+      "hourly_net": "0.1114"
+    },
+    {
+      "name": "cpx42",
+      "location": "hel1",
+      "monthly_net": "69.49",
+      "hourly_net": "0.1114"
+    },
+    {
+      "name": "cpx42",
+      "location": "nbg1",
+      "monthly_net": "69.49",
+      "hourly_net": "0.1114"
+    },
+    {
+      "name": "cpx42",
+      "location": "sin",
+      "monthly_net": "93.49",
+      "hourly_net": "0.1498"
+    },
+    {
+      "name": "cpx51",
+      "location": "ash",
+      "monthly_net": "237.99",
+      "hourly_net": "0.3814"
+    },
+    {
+      "name": "cpx51",
+      "location": "hil",
+      "monthly_net": "237.99",
+      "hourly_net": "0.3814"
+    },
+    {
+      "name": "cpx52",
+      "location": "fsn1",
+      "monthly_net": "100.49",
+      "hourly_net": "0.161"
+    },
+    {
+      "name": "cpx52",
+      "location": "hel1",
+      "monthly_net": "100.49",
+      "hourly_net": "0.161"
+    },
+    {
+      "name": "cpx52",
+      "location": "nbg1",
+      "monthly_net": "100.49",
+      "hourly_net": "0.161"
+    },
+    {
+      "name": "cpx52",
+      "location": "sin",
+      "monthly_net": "134.49",
+      "hourly_net": "0.2155"
+    },
+    {
+      "name": "cpx62",
+      "location": "fsn1",
+      "monthly_net": "129.99",
+      "hourly_net": "0.2083"
+    },
+    {
+      "name": "cpx62",
+      "location": "hel1",
+      "monthly_net": "129.99",
+      "hourly_net": "0.2083"
+    },
+    {
+      "name": "cpx62",
+      "location": "nbg1",
+      "monthly_net": "129.99",
+      "hourly_net": "0.2083"
+    },
+    {
+      "name": "cpx62",
+      "location": "sin",
+      "monthly_net": "171.99",
+      "hourly_net": "0.2756"
+    },
+    {
+      "name": "cx23",
+      "location": "fsn1",
+      "monthly_net": "5.49",
+      "hourly_net": "0.0088"
+    },
+    {
+      "name": "cx23",
+      "location": "hel1",
+      "monthly_net": "5.49",
+      "hourly_net": "0.0088"
+    },
+    {
+      "name": "cx23",
+      "location": "nbg1",
+      "monthly_net": "5.49",
+      "hourly_net": "0.0088"
+    },
+    {
+      "name": "cx33",
+      "location": "fsn1",
+      "monthly_net": "8.49",
+      "hourly_net": "0.0136"
+    },
+    {
+      "name": "cx33",
+      "location": "hel1",
+      "monthly_net": "8.49",
+      "hourly_net": "0.0136"
+    },
+    {
+      "name": "cx33",
+      "location": "nbg1",
+      "monthly_net": "8.49",
+      "hourly_net": "0.0136"
+    },
+    {
+      "name": "cx43",
+      "location": "fsn1",
+      "monthly_net": "15.99",
+      "hourly_net": "0.0256"
+    },
+    {
+      "name": "cx43",
+      "location": "hel1",
+      "monthly_net": "15.99",
+      "hourly_net": "0.0256"
+    },
+    {
+      "name": "cx43",
+      "location": "nbg1",
+      "monthly_net": "15.99",
+      "hourly_net": "0.0256"
+    },
+    {
+      "name": "cx53",
+      "location": "fsn1",
+      "monthly_net": "29.49",
+      "hourly_net": "0.0473"
+    },
+    {
+      "name": "cx53",
+      "location": "hel1",
+      "monthly_net": "29.49",
+      "hourly_net": "0.0473"
+    },
+    {
+      "name": "cx53",
+      "location": "nbg1",
+      "monthly_net": "29.49",
+      "hourly_net": "0.0473"
+    }
+  ]
+}

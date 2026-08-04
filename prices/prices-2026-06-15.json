@@ -1,0 +1,651 @@
+{
+  "_comment": "Pre-adjustment Hetzner Cloud list prices, for proposing price overrides on servers that predate the change. NET EUR: the published source table quotes gross at 19% German VAT, converted here and verified against a post-adjustment GET /pricing capture (see prices/gen/). Prices EXCLUDE the primary IPv4, which is a separately priced resource — do not add it here.",
+  "source": "https://docs.hetzner.com/de/general/infrastructure-and-availability/price-adjustment/",
+  "source_quotes": "gross, 19% German VAT",
+  "effective": "2026-06-15T06:00:00Z",
+  "currency": "EUR",
+  "basis": "net",
+  "units": {
+    "monthly_net_cents": "1e-2 EUR, integer",
+    "hourly_net_millicents": "1e-5 EUR, integer"
+  },
+  "server_types": [
+    {
+      "name": "cax11",
+      "locations": [
+        "fsn1",
+        "nbg1",
+        "hel1"
+      ],
+      "old": {
+        "monthly_net_cents": 449,
+        "hourly_net_millicents": 720
+      },
+      "new": {
+        "monthly_net_cents": 599,
+        "hourly_net_millicents": 960
+      }
+    },
+    {
+      "name": "cax21",
+      "locations": [
+        "fsn1",
+        "nbg1",
+        "hel1"
+      ],
+      "old": {
+        "monthly_net_cents": 799,
+        "hourly_net_millicents": 1280
+      },
+      "new": {
+        "monthly_net_cents": 1049,
+        "hourly_net_millicents": 1680
+      }
+    },
+    {
+      "name": "cax31",
+      "locations": [
+        "fsn1",
+        "nbg1",
+        "hel1"
+      ],
+      "old": {
+        "monthly_net_cents": 1599,
+        "hourly_net_millicents": 2560
+      },
+      "new": {
+        "monthly_net_cents": 2099,
+        "hourly_net_millicents": 3360
+      }
+    },
+    {
+      "name": "cax41",
+      "locations": [
+        "fsn1",
+        "nbg1",
+        "hel1"
+      ],
+      "old": {
+        "monthly_net_cents": 3149,
+        "hourly_net_millicents": 5050
+      },
+      "new": {
+        "monthly_net_cents": 4099,
+        "hourly_net_millicents": 6570
+      }
+    },
+    {
+      "name": "ccx13",
+      "locations": [
+        "ash",
+        "hil"
+      ],
+      "old": {
+        "monthly_net_cents": 1699,
+        "hourly_net_millicents": 2720
+      },
+      "new": {
+        "monthly_net_cents": 4349,
+        "hourly_net_millicents": 6970
+      }
+    },
+    {
+      "name": "ccx13",
+      "locations": [
+        "fsn1",
+        "nbg1",
+        "hel1"
+      ],
+      "old": {
+        "monthly_net_cents": 1599,
+        "hourly_net_millicents": 2560
+      },
+      "new": {
+        "monthly_net_cents": 4299,
+        "hourly_net_millicents": 6890
+      }
+    },
+    {
+      "name": "ccx13",
+      "locations": [
+        "sin"
+      ],
+      "old": {
+        "monthly_net_cents": 2749,
+        "hourly_net_millicents": 4410
+      },
+      "new": {
+        "monthly_net_cents": 5399,
+        "hourly_net_millicents": 8650
+      }
+    },
+    {
+      "name": "ccx23",
+      "locations": [
+        "ash",
+        "hil"
+      ],
+      "old": {
+        "monthly_net_cents": 3399,
+        "hourly_net_millicents": 5450
+      },
+      "new": {
+        "monthly_net_cents": 8749,
+        "hourly_net_millicents": 14020
+      }
+    },
+    {
+      "name": "ccx23",
+      "locations": [
+        "fsn1",
+        "nbg1",
+        "hel1"
+      ],
+      "old": {
+        "monthly_net_cents": 3149,
+        "hourly_net_millicents": 5050
+      },
+      "new": {
+        "monthly_net_cents": 8599,
+        "hourly_net_millicents": 13780
+      }
+    },
+    {
+      "name": "ccx23",
+      "locations": [
+        "sin"
+      ],
+      "old": {
+        "monthly_net_cents": 5149,
+        "hourly_net_millicents": 8250
+      },
+      "new": {
+        "monthly_net_cents": 10849,
+        "hourly_net_millicents": 17390
+      }
+    },
+    {
+      "name": "ccx33",
+      "locations": [
+        "ash",
+        "hil"
+      ],
+      "old": {
+        "monthly_net_cents": 6499,
+        "hourly_net_millicents": 10420
+      },
+      "new": {
+        "monthly_net_cents": 14099,
+        "hourly_net_millicents": 22590
+      }
+    },
+    {
+      "name": "ccx33",
+      "locations": [
+        "fsn1",
+        "nbg1",
+        "hel1"
+      ],
+      "old": {
+        "monthly_net_cents": 6249,
+        "hourly_net_millicents": 10010
+      },
+      "new": {
+        "monthly_net_cents": 13849,
+        "hourly_net_millicents": 22190
+      }
+    },
+    {
+      "name": "ccx33",
+      "locations": [
+        "sin"
+      ],
+      "old": {
+        "monthly_net_cents": 9699,
+        "hourly_net_millicents": 15540
+      },
+      "new": {
+        "monthly_net_cents": 17449,
+        "hourly_net_millicents": 27960
+      }
+    },
+    {
+      "name": "ccx43",
+      "locations": [
+        "ash",
+        "hil"
+      ],
+      "old": {
+        "monthly_net_cents": 12999,
+        "hourly_net_millicents": 20830
+      },
+      "new": {
+        "monthly_net_cents": 27949,
+        "hourly_net_millicents": 44790
+      }
+    },
+    {
+      "name": "ccx43",
+      "locations": [
+        "fsn1",
+        "nbg1",
+        "hel1"
+      ],
+      "old": {
+        "monthly_net_cents": 12499,
+        "hourly_net_millicents": 20030
+      },
+      "new": {
+        "monthly_net_cents": 27599,
+        "hourly_net_millicents": 44230
+      }
+    },
+    {
+      "name": "ccx43",
+      "locations": [
+        "sin"
+      ],
+      "old": {
+        "monthly_net_cents": 17849,
+        "hourly_net_millicents": 28600
+      },
+      "new": {
+        "monthly_net_cents": 34099,
+        "hourly_net_millicents": 54650
+      }
+    },
+    {
+      "name": "ccx53",
+      "locations": [
+        "ash",
+        "hil"
+      ],
+      "old": {
+        "monthly_net_cents": 25999,
+        "hourly_net_millicents": 41670
+      },
+      "new": {
+        "monthly_net_cents": 53849,
+        "hourly_net_millicents": 86300
+      }
+    },
+    {
+      "name": "ccx53",
+      "locations": [
+        "fsn1",
+        "nbg1",
+        "hel1"
+      ],
+      "old": {
+        "monthly_net_cents": 24999,
+        "hourly_net_millicents": 40060
+      },
+      "new": {
+        "monthly_net_cents": 53349,
+        "hourly_net_millicents": 85500
+      }
+    },
+    {
+      "name": "ccx53",
+      "locations": [
+        "sin"
+      ],
+      "old": {
+        "monthly_net_cents": 38249,
+        "hourly_net_millicents": 61300
+      },
+      "new": {
+        "monthly_net_cents": 65199,
+        "hourly_net_millicents": 104490
+      }
+    },
+    {
+      "name": "ccx63",
+      "locations": [
+        "ash",
+        "hil"
+      ],
+      "old": {
+        "monthly_net_cents": 38999,
+        "hourly_net_millicents": 62500
+      },
+      "new": {
+        "monthly_net_cents": 85999,
+        "hourly_net_millicents": 137820
+      }
+    },
+    {
+      "name": "ccx63",
+      "locations": [
+        "fsn1",
+        "nbg1",
+        "hel1"
+      ],
+      "old": {
+        "monthly_net_cents": 37449,
+        "hourly_net_millicents": 60010
+      },
+      "new": {
+        "monthly_net_cents": 85349,
+        "hourly_net_millicents": 136780
+      }
+    },
+    {
+      "name": "ccx63",
+      "locations": [
+        "sin"
+      ],
+      "old": {
+        "monthly_net_cents": 62699,
+        "hourly_net_millicents": 100480
+      },
+      "new": {
+        "monthly_net_cents": 103649,
+        "hourly_net_millicents": 166100
+      }
+    },
+    {
+      "name": "cpx11",
+      "locations": [
+        "ash",
+        "hil"
+      ],
+      "old": {
+        "monthly_net_cents": 599,
+        "hourly_net_millicents": 960
+      },
+      "new": {
+        "monthly_net_cents": 1749,
+        "hourly_net_millicents": 2800
+      }
+    },
+    {
+      "name": "cpx12",
+      "locations": [
+        "sin"
+      ],
+      "old": {
+        "monthly_net_cents": 799,
+        "hourly_net_millicents": 1280
+      },
+      "new": {
+        "monthly_net_cents": 1549,
+        "hourly_net_millicents": 2480
+      }
+    },
+    {
+      "name": "cpx21",
+      "locations": [
+        "ash",
+        "hil"
+      ],
+      "old": {
+        "monthly_net_cents": 1199,
+        "hourly_net_millicents": 1920
+      },
+      "new": {
+        "monthly_net_cents": 3199,
+        "hourly_net_millicents": 5130
+      }
+    },
+    {
+      "name": "cpx22",
+      "locations": [
+        "fsn1",
+        "nbg1",
+        "hel1"
+      ],
+      "old": {
+        "monthly_net_cents": 799,
+        "hourly_net_millicents": 1280
+      },
+      "new": {
+        "monthly_net_cents": 1949,
+        "hourly_net_millicents": 3120
+      }
+    },
+    {
+      "name": "cpx22",
+      "locations": [
+        "sin"
+      ],
+      "old": {
+        "monthly_net_cents": 1599,
+        "hourly_net_millicents": 2560
+      },
+      "new": {
+        "monthly_net_cents": 2649,
+        "hourly_net_millicents": 4250
+      }
+    },
+    {
+      "name": "cpx31",
+      "locations": [
+        "ash",
+        "hil"
+      ],
+      "old": {
+        "monthly_net_cents": 2099,
+        "hourly_net_millicents": 3360
+      },
+      "new": {
+        "monthly_net_cents": 6249,
+        "hourly_net_millicents": 10010
+      }
+    },
+    {
+      "name": "cpx32",
+      "locations": [
+        "fsn1",
+        "nbg1",
+        "hel1"
+      ],
+      "old": {
+        "monthly_net_cents": 1399,
+        "hourly_net_millicents": 2240
+      },
+      "new": {
+        "monthly_net_cents": 3549,
+        "hourly_net_millicents": 5690
+      }
+    },
+    {
+      "name": "cpx32",
+      "locations": [
+        "sin"
+      ],
+      "old": {
+        "monthly_net_cents": 3249,
+        "hourly_net_millicents": 5210
+      },
+      "new": {
+        "monthly_net_cents": 4899,
+        "hourly_net_millicents": 7850
+      }
+    },
+    {
+      "name": "cpx41",
+      "locations": [
+        "ash",
+        "hil"
+      ],
+      "old": {
+        "monthly_net_cents": 3899,
+        "hourly_net_millicents": 6250
+      },
+      "new": {
+        "monthly_net_cents": 12049,
+        "hourly_net_millicents": 19310
+      }
+    },
+    {
+      "name": "cpx42",
+      "locations": [
+        "fsn1",
+        "nbg1",
+        "hel1"
+      ],
+      "old": {
+        "monthly_net_cents": 2549,
+        "hourly_net_millicents": 4080
+      },
+      "new": {
+        "monthly_net_cents": 6949,
+        "hourly_net_millicents": 11140
+      }
+    },
+    {
+      "name": "cpx42",
+      "locations": [
+        "sin"
+      ],
+      "old": {
+        "monthly_net_cents": 5599,
+        "hourly_net_millicents": 8970
+      },
+      "new": {
+        "monthly_net_cents": 9349,
+        "hourly_net_millicents": 14980
+      }
+    },
+    {
+      "name": "cpx51",
+      "locations": [
+        "ash",
+        "hil"
+      ],
+      "old": {
+        "monthly_net_cents": 7799,
+        "hourly_net_millicents": 12500
+      },
+      "new": {
+        "monthly_net_cents": 23799,
+        "hourly_net_millicents": 38140
+      }
+    },
+    {
+      "name": "cpx52",
+      "locations": [
+        "fsn1",
+        "nbg1",
+        "hel1"
+      ],
+      "old": {
+        "monthly_net_cents": 3649,
+        "hourly_net_millicents": 5850
+      },
+      "new": {
+        "monthly_net_cents": 10049,
+        "hourly_net_millicents": 16100
+      }
+    },
+    {
+      "name": "cpx52",
+      "locations": [
+        "sin"
+      ],
+      "old": {
+        "monthly_net_cents": 7799,
+        "hourly_net_millicents": 12500
+      },
+      "new": {
+        "monthly_net_cents": 13449,
+        "hourly_net_millicents": 21550
+      }
+    },
+    {
+      "name": "cpx62",
+      "locations": [
+        "fsn1",
+        "nbg1",
+        "hel1"
+      ],
+      "old": {
+        "monthly_net_cents": 5049,
+        "hourly_net_millicents": 8090
+      },
+      "new": {
+        "monthly_net_cents": 12999,
+        "hourly_net_millicents": 20830
+      }
+    },
+    {
+      "name": "cpx62",
+      "locations": [
+        "sin"
+      ],
+      "old": {
+        "monthly_net_cents": 10049,
+        "hourly_net_millicents": 16100
+      },
+      "new": {
+        "monthly_net_cents": 17199,
+        "hourly_net_millicents": 27560
+      }
+    },
+    {
+      "name": "cx23",
+      "locations": [
+        "fsn1",
+        "nbg1",
+        "hel1"
+      ],
+      "old": {
+        "monthly_net_cents": 399,
+        "hourly_net_millicents": 640
+      },
+      "new": {
+        "monthly_net_cents": 549,
+        "hourly_net_millicents": 880
+      }
+    },
+    {
+      "name": "cx33",
+      "locations": [
+        "fsn1",
+        "nbg1",
+        "hel1"
+      ],
+      "old": {
+        "monthly_net_cents": 649,
+        "hourly_net_millicents": 1040
+      },
+      "new": {
+        "monthly_net_cents": 849,
+        "hourly_net_millicents": 1360
+      }
+    },
+    {
+      "name": "cx43",
+      "locations": [
+        "fsn1",
+        "nbg1",
+        "hel1"
+      ],
+      "old": {
+        "monthly_net_cents": 1199,
+        "hourly_net_millicents": 1920
+      },
+      "new": {
+        "monthly_net_cents": 1599,
+        "hourly_net_millicents": 2560
+      }
+    },
+    {
+      "name": "cx53",
+      "locations": [
+        "fsn1",
+        "nbg1",
+        "hel1"
+      ],
+      "old": {
+        "monthly_net_cents": 2249,
+        "hourly_net_millicents": 3600
+      },
+      "new": {
+        "monthly_net_cents": 2949,
+        "hourly_net_millicents": 4730
+      }
+    }
+  ]
+}
