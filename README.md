@@ -73,6 +73,16 @@ hcloud-pricetag revert -dry-run
 hcloud-pricetag revert -yes
 ```
 
+### Currency
+
+Hetzner bills in EUR or USD, fixed when the account is created. `plan` reads
+the account's currency from `/pricing` and **refuses to run** on anything but
+EUR, because the bundled table holds EUR figures and no USD equivalent ships
+with this tool. Writing euro amounts onto a dollar-billed account would be
+wrong by an exchange rate while looking entirely reasonable.
+
+Supply your own table with `-prices` if you have the USD figures.
+
 ### Authentication
 
 `HCLOUD_TOKEN`, or `-token-file PATH`. There is no `-token` flag on purpose: a
@@ -82,12 +92,19 @@ Set `HCLOUD_API_BASE` to try the tool against a mock instead of the real API.
 
 ## What it writes
 
-Two labels, on the server:
+Three labels, on the server:
 
 | Label | Unit | Example |
 |---|---|---|
-| `cloudviewer.app/monthly-net-cents` | cents, 1e-2 EUR | `1399` → €13.99/month |
-| `cloudviewer.app/hourly-net-millicents` | milli-cents, 1e-5 EUR | `2240` → €0.0224/hour |
+| `cloudviewer.app/monthly-net-cents` | cents, 1e-2 of the unit | `1399` → 13.99/month |
+| `cloudviewer.app/hourly-net-millicents` | milli-cents, 1e-5 of the unit | `2240` → 0.0224/hour |
+| `cloudviewer.app/price-currency` | ISO code | `EUR` |
+
+The currency label is required, and the reader compares it against the
+project's own `/pricing` document rather than trusting it. An amount without a
+stated currency is not an amount — and Hetzner allows moving a server between
+projects, where crossing a currency boundary re-prices it, leaving a stale
+label wrong twice over.
 
 Both are **net** EUR, excluding the primary IPv4 (which Hetzner prices
 separately).
@@ -123,7 +140,7 @@ current labels and adds to them.
   creation timestamp changed since the plan was made. A rescale between plan
   and apply is precisely the event that forfeits the old price.
 - Re-running either command changes nothing that is already correct.
-- `revert` removes only the two reserved keys.
+- `revert` removes only the three reserved keys.
 
 ## The price table
 

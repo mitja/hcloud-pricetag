@@ -29,7 +29,17 @@ import (
 const (
 	LabelMonthly = "cloudviewer.app/monthly-net-cents"
 	LabelHourly  = "cloudviewer.app/hourly-net-millicents"
+	// LabelCurrency says which currency the two amounts are in, and is
+	// required: an amount without a stated currency is not an amount. The
+	// reader compares it against the project's own /pricing document and
+	// ignores the override when they disagree.
+	LabelCurrency = "cloudviewer.app/price-currency"
 )
+
+// TableCurrency is the only billing currency the bundled table covers.
+// Hetzner's published adjustment page quotes EUR; no USD equivalent is
+// bundled, so a USD-billed account gets refused rather than mislabelled.
+const TableCurrency = "EUR"
 
 //go:embed prices/prices-2026-06-15.json
 var embeddedTable []byte
@@ -158,11 +168,12 @@ func (t *Table) Lookup(serverType, location string) (Entry, bool) {
 	return Entry{}, false
 }
 
-// Labels renders the two override labels for this entry's OLD price.
-func (e Entry) Labels() map[string]string {
+// Labels renders the override labels for this entry's OLD price.
+func (e Entry) Labels(currency string) map[string]string {
 	return map[string]string{
-		LabelMonthly: strconv.FormatInt(e.Old.MonthlyNetCents, 10),
-		LabelHourly:  strconv.FormatInt(e.Old.HourlyNetMilliCents, 10),
+		LabelMonthly:  strconv.FormatInt(e.Old.MonthlyNetCents, 10),
+		LabelHourly:   strconv.FormatInt(e.Old.HourlyNetMilliCents, 10),
+		LabelCurrency: currency,
 	}
 }
 

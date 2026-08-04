@@ -54,8 +54,11 @@ type SkippedServer struct {
 
 // Plan is the reviewable artifact between reading and writing.
 type Plan struct {
-	Comment        []string        `json:"_comment"`
-	PriceTable     string          `json:"price_table_source"`
+	Comment    []string `json:"_comment"`
+	PriceTable string   `json:"price_table_source"`
+	// Currency the proposed amounts are in, as reported by the account's own
+	// /pricing document.
+	Currency       string          `json:"currency"`
 	Cutoff         time.Time       `json:"cutoff"`
 	Servers        []PlanEntry     `json:"servers"`
 	Skipped        []SkippedServer `json:"skipped"`
@@ -65,9 +68,10 @@ type Plan struct {
 // BuildPlan proposes an override for every server that predates the cutoff and
 // has a pre-adjustment price in the table. Everything else lands in Skipped
 // with a reason.
-func BuildPlan(servers []Server, table *Table, cutoff time.Time) Plan {
+func BuildPlan(servers []Server, table *Table, cutoff time.Time, currency string) Plan {
 	p := Plan{
 		Comment:        planComment,
+		Currency:       currency,
 		PriceTable:     table.Source,
 		Cutoff:         cutoff.UTC(),
 		TotalInspected: len(servers),
@@ -91,7 +95,7 @@ func BuildPlan(servers []Server, table *Table, cutoff time.Time) Plan {
 			})
 			continue
 		}
-		want := entry.Labels()
+		want := entry.Labels(currency)
 		if labelsAlreadySet(s.Labels, want) {
 			p.Skipped = append(p.Skipped, SkippedServer{
 				ID: s.ID, Name: s.Name, ServerType: s.Type, Location: s.Location,
@@ -161,7 +165,7 @@ func StripOverrides(current map[string]string) (map[string]string, bool) {
 	out := make(map[string]string, len(current))
 	changed := false
 	for k, v := range current {
-		if k == LabelMonthly || k == LabelHourly {
+		if k == LabelMonthly || k == LabelHourly || k == LabelCurrency {
 			changed = true
 			continue
 		}

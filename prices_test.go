@@ -116,10 +116,21 @@ func TestMonthlyIsNotDerivedFromHourly(t *testing.T) {
 
 // Every table value must survive the round trip through its label, since the
 // label is where it actually lives.
+func TestLabelsCarryTheCurrency(t *testing.T) {
+	table, _ := LoadTable("")
+	l := table.ServerTypes[0].Labels("EUR")
+	if l[LabelCurrency] != "EUR" {
+		t.Fatalf("currency label: %q — an amount without a currency is not an amount", l[LabelCurrency])
+	}
+	if len(l) != 3 {
+		t.Fatalf("labels: %+v", l)
+	}
+}
+
 func TestLabelValuesRoundTrip(t *testing.T) {
 	table, _ := LoadTable("")
 	for _, e := range table.ServerTypes {
-		labels := e.Labels()
+		labels := e.Labels("EUR")
 		m, err := strconv.ParseInt(labels[LabelMonthly], 10, 64)
 		if err != nil || m != e.Old.MonthlyNetCents {
 			t.Errorf("%s monthly label %q does not round-trip", e.Name, labels[LabelMonthly])

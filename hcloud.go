@@ -170,3 +170,22 @@ func (c *Client) do(ctx context.Context, method, url string, body []byte, out an
 	}
 	return nil
 }
+
+// AccountCurrency reports the billing currency GET /pricing declares for the
+// authenticated account ("EUR"/"USD").
+//
+// Hetzner fixes this when the account is created and quotes every price in it.
+// The bundled table holds EUR figures, so writing them onto a USD-billed
+// account would be wrong by an exchange rate — and would look entirely
+// reasonable while being wrong.
+func (c *Client) AccountCurrency(ctx context.Context) (string, error) {
+	var payload struct {
+		Pricing struct {
+			Currency string `json:"currency"`
+		} `json:"pricing"`
+	}
+	if err := c.do(ctx, http.MethodGet, c.BaseURL+"/pricing", nil, &payload); err != nil {
+		return "", err
+	}
+	return payload.Pricing.Currency, nil
+}

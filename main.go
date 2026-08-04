@@ -41,7 +41,7 @@ func usage() {
       server that changed since the plan was made.
 
   hcloud-pricetag revert  [-yes] [-dry-run]
-      Remove both override labels from every server that carries them.
+      Remove the override labels from every server that carries them.
 
   hcloud-pricetag prices  [-prices FILE]
       Print the bundled price table.
@@ -129,22 +129,40 @@ func cmdPlan(args []string) error {
 
 	ctx := context.Background()
 	client := NewClient(os.Getenv("HCLOUD_API_BASE"), tok)
+
+	// The bundled table is EUR. Writing its figures onto a USD-billed account
+	// would be wrong by an exchange rate and would look entirely reasonable
+	// while being wrong — refuse instead.
+	currency, err := client.AccountCurrency(ctx)
+	if err != nil {
+		return fmt.Errorf("read account currency from /pricing: %w", err)
+	}
+	if currency != TableCurrency {
+		return fmt.Errorf(`this account is billed in %s, but the bundled price table is %s.
+
+Hetzner fixes the billing currency per account and publishes a separate price
+list per currency; no %s table ships with this tool, so there is nothing here
+that could be written correctly. Supply one with -prices, or set the labels by
+hand from your own records.`, currency, TableCurrency, currency)
+	}
+
 	servers, err := client.ListServers(ctx)
 	if err != nil {
 		return err
 	}
 
-	plan := BuildPlan(servers, table, cutoff)
+	plan := BuildPlan(servers, table, cutoff, currency)
 	if err := plan.Save(*out); err != nil {
 		return err
 	}
 
-	fmt.Printf("inspected %d server(s), cutoff %s\n", plan.TotalInspected, cutoff.Format(time.RFC3339))
+	fmt.Printf("inspected %d server(s), cutoff %s, currency %s\n",
+		plan.TotalInspected, cutoff.Format(time.RFC3339), currency)
 	fmt.Printf("proposed  %d\n", len(plan.Servers))
 	for _, e := range plan.Servers {
-		fmt.Printf("  %-10d %-24s %-8s %-6s %8s -> %8s EUR/month\n",
+		fmt.Printf("  %-10d %-24s %-8s %-6s %8s -> %8s %s/month\n",
 			e.ID, truncate(e.Name, 24), e.ServerType, e.Location,
-			e.CurrentListEURMonth, e.ProposedEURMonth)
+			e.CurrentListEURMonth, e.ProposedEURMonth, currency)
 	}
 	// Skipped servers are printed, not just counted: a quiet skip reads as
 	// "covered everything".
@@ -191,7 +209,7 @@ func cmdApply(args []string) error {
 			if *dryRun {
 				verb = "would label"
 			}
-			fmt.Printf("  %-10d %-24s %s %s EUR/month\n", r.Entry.ID, truncate(r.Entry.Name, 24), verb, r.Entry.ProposedEURMonth)
+			fmt.Printf("  %-10d %-24s %s %s %s/month\n", r.Entry.ID, truncate(r.Entry.Name, 24), verb, r.Entry.ProposedEURMonth, plan.Currency)
 			continue
 		}
 		skipped++

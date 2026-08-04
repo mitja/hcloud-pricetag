@@ -35,7 +35,7 @@ func TestBuildPlanProposesOnlyPreCutoffServersWithAKnownPrice(t *testing.T) {
 		srv(2, "fresh", "cpx52", "fsn1", after, nil),
 		srv(3, "unknown-type", "cx22", "fsn1", before, nil),
 		srv(4, "unknown-loc", "cpx52", "sin", before, nil),
-	}, testTable(), cutoff)
+	}, testTable(), cutoff, "EUR")
 
 	if len(p.Servers) != 1 || p.Servers[0].ID != 1 {
 		t.Fatalf("proposed: %+v", p.Servers)
@@ -60,7 +60,7 @@ func TestBuildPlanProposesOnlyPreCutoffServersWithAKnownPrice(t *testing.T) {
 // The adjustment applies from the cutoff onwards, so a server created at the
 // exact instant is already on new pricing.
 func TestServerCreatedExactlyAtCutoffIsNotProposed(t *testing.T) {
-	p := BuildPlan([]Server{srv(1, "edge", "cpx52", "fsn1", cutoff, nil)}, testTable(), cutoff)
+	p := BuildPlan([]Server{srv(1, "edge", "cpx52", "fsn1", cutoff, nil)}, testTable(), cutoff, "EUR")
 	if len(p.Servers) != 0 {
 		t.Fatalf("proposed: %+v", p.Servers)
 	}
@@ -69,9 +69,10 @@ func TestServerCreatedExactlyAtCutoffIsNotProposed(t *testing.T) {
 func TestAlreadyLabelledServerIsSkipped(t *testing.T) {
 	before := cutoff.Add(-24 * time.Hour)
 	p := BuildPlan([]Server{srv(1, "done", "cpx52", "fsn1", before, map[string]string{
-		LabelMonthly: "3649",
-		LabelHourly:  "5850",
-	})}, testTable(), cutoff)
+		LabelMonthly:  "3649",
+		LabelHourly:   "5850",
+		LabelCurrency: "EUR",
+	})}, testTable(), cutoff, "EUR")
 	if len(p.Servers) != 0 {
 		t.Fatalf("re-running must be a no-op, got %+v", p.Servers)
 	}
@@ -84,7 +85,7 @@ func TestPartiallyLabelledServerIsStillProposed(t *testing.T) {
 	before := cutoff.Add(-24 * time.Hour)
 	p := BuildPlan([]Server{srv(1, "half", "cpx52", "fsn1", before, map[string]string{
 		LabelMonthly: "3649", // hourly missing
-	})}, testTable(), cutoff)
+	})}, testTable(), cutoff, "EUR")
 	if len(p.Servers) != 1 {
 		t.Fatalf("a half-written override must be completed, got %+v", p.Servers)
 	}
@@ -113,7 +114,7 @@ func TestDriftDetectsRescaleRelocationAndIdentitySwap(t *testing.T) {
 // PUT /servers/{id} replaces the whole label map, so a merge bug would delete
 // the customer's own labels and nobody would notice for weeks.
 func TestMergePreservesForeignLabels(t *testing.T) {
-	e := PlanEntry{Labels: map[string]string{LabelMonthly: "3649", LabelHourly: "5850"}}
+	e := PlanEntry{Labels: map[string]string{LabelMonthly: "3649", LabelHourly: "5850", LabelCurrency: "EUR"}}
 	merged := e.MergeLabels(map[string]string{
 		"cost-center": "platform",
 		"env":         "prod",
@@ -125,7 +126,7 @@ func TestMergePreservesForeignLabels(t *testing.T) {
 	if merged[LabelMonthly] != "3649" || merged[LabelHourly] != "5850" {
 		t.Fatalf("override not applied: %+v", merged)
 	}
-	if len(merged) != 4 {
+	if len(merged) != 5 {
 		t.Fatalf("unexpected label count: %+v", merged)
 	}
 }
@@ -135,6 +136,7 @@ func TestStripOverridesKeepsEverythingElse(t *testing.T) {
 		"cost-center": "platform",
 		LabelMonthly:  "3649",
 		LabelHourly:   "5850",
+		LabelCurrency: "EUR",
 	})
 	if !changed {
 		t.Fatal("changed should be true")
@@ -257,10 +259,10 @@ func TestApplyIsIdempotent(t *testing.T) {
 	before := cutoff.Add(-24 * time.Hour)
 	plan := &Plan{Servers: []PlanEntry{{
 		ID: 1, Name: "done", ServerType: "cpx52", Location: "fsn1", Created: before,
-		Labels: map[string]string{LabelMonthly: "3649", LabelHourly: "5850"}, Confirmed: true,
+		Labels: map[string]string{LabelMonthly: "3649", LabelHourly: "5850", LabelCurrency: "EUR"}, Confirmed: true,
 	}}}
 	live := []Server{srv(1, "done", "cpx52", "fsn1", before, map[string]string{
-		LabelMonthly: "3649", LabelHourly: "5850",
+		LabelMonthly: "3649", LabelHourly: "5850", LabelCurrency: "EUR",
 	})}
 	w := &fakeWriter{}
 	results, _ := Apply(context.Background(), w, plan, live, false)
@@ -274,7 +276,7 @@ func TestApplyIsIdempotent(t *testing.T) {
 
 func TestPlanRoundTripsThroughDisk(t *testing.T) {
 	before := cutoff.Add(-24 * time.Hour)
-	p := BuildPlan([]Server{srv(1, "legacy", "cpx52", "fsn1", before, nil)}, testTable(), cutoff)
+	p := BuildPlan([]Server{srv(1, "legacy", "cpx52", "fsn1", before, nil)}, testTable(), cutoff, "EUR")
 	path := t.TempDir() + "/plan.json"
 	if err := p.Save(path); err != nil {
 		t.Fatal(err)
@@ -294,5 +296,33 @@ func TestPlanRoundTripsThroughDisk(t *testing.T) {
 	}
 	if len(loaded.Comment) == 0 {
 		t.Error("the plan file must explain itself")
+	}
+}
+
+// A server carrying an override without a currency is not "already labelled":
+// an amount with no stated currency is not an amount, and the reader ignores
+// it (specs/16 §2.3).
+func TestOverrideWithoutCurrencyIsIncomplete(t *testing.T) {
+	before := cutoff.Add(-24 * time.Hour)
+	p := BuildPlan([]Server{srv(1, "legacy", "cpx52", "fsn1", before, map[string]string{
+		LabelMonthly: "3649", LabelHourly: "5850", // currency missing
+	})}, testTable(), cutoff, "EUR")
+	if len(p.Servers) != 1 {
+		t.Fatalf("a currency-less override must be completed, got %+v", p.Servers)
+	}
+	if p.Servers[0].Labels[LabelCurrency] != "EUR" {
+		t.Fatalf("labels: %+v", p.Servers[0].Labels)
+	}
+}
+
+func TestRevertRemovesTheCurrencyLabelToo(t *testing.T) {
+	stripped, changed := StripOverrides(map[string]string{
+		"env":         "prod",
+		LabelMonthly:  "3649",
+		LabelHourly:   "5850",
+		LabelCurrency: "EUR",
+	})
+	if !changed || len(stripped) != 1 || stripped["env"] != "prod" {
+		t.Fatalf("stripped: %+v", stripped)
 	}
 }
