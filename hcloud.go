@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -118,6 +119,18 @@ func (c *Client) ListServers(ctx context.Context) ([]Server, error) {
 	}
 }
 
+// GetServer reads one server, so a write can start from its labels as they
+// are now rather than as they were when the list was fetched.
+func (c *Client) GetServer(ctx context.Context, id int64) (Server, error) {
+	var payload struct {
+		Server apiServer `json:"server"`
+	}
+	if err := c.do(ctx, http.MethodGet, fmt.Sprintf("%s/servers/%d", c.BaseURL, id), nil, &payload); err != nil {
+		return Server{}, err
+	}
+	return payload.Server.toServer(), nil
+}
+
 // SetLabels writes a server's labels.
 //
 // PUT /servers/{id} REPLACES the whole label map — it does not merge. Callers
@@ -171,6 +184,59 @@ func (c *Client) do(ctx context.Context, method, url string, body []byte, out an
 	return nil
 }
 
+// Pricing is the slice of GET /pricing this tool reads: the account's billing
+// currency and the current list price of every server type per location.
+type Pricing struct {
+	Currency string
+	// ServerTypes maps type name -> location -> list price, in minor units
+	// at the label scales. A price that does not encode exactly at those
+	// scales is left out rather than rounded.
+	ServerTypes map[string]map[string]Price
+}
+
+// ListPrice returns the current list price of a server type at a location.
+func (p Pricing) ListPrice(serverType, location string) (Price, bool) {
+	pr, ok := p.ServerTypes[strings.ToLower(serverType)][location]
+	return pr, ok
+}
+
+// Pricing fetches GET /pricing.
+func (c *Client) Pricing(ctx context.Context) (Pricing, error) {
+	type amount struct {
+		Net string `json:"net"`
+	}
+	var payload struct {
+		Pricing struct {
+			Currency    string `json:"currency"`
+			ServerTypes []struct {
+				Name   string `json:"name"`
+				Prices []struct {
+					Location     string `json:"location"`
+					PriceHourly  amount `json:"price_hourly"`
+					PriceMonthly amount `json:"price_monthly"`
+				} `json:"prices"`
+			} `json:"server_types"`
+		} `json:"pricing"`
+	}
+	if err := c.do(ctx, http.MethodGet, c.BaseURL+"/pricing", nil, &payload); err != nil {
+		return Pricing{}, err
+	}
+	out := Pricing{Currency: payload.Pricing.Currency, ServerTypes: map[string]map[string]Price{}}
+	for _, st := range payload.Pricing.ServerTypes {
+		byLoc := map[string]Price{}
+		for _, pr := range st.Prices {
+			m, errM := ParseMinor(pr.PriceMonthly.Net, MonthlyScale)
+			h, errH := ParseMinor(pr.PriceHourly.Net, HourlyScale)
+			if errM != nil || errH != nil {
+				continue
+			}
+			byLoc[pr.Location] = Price{MonthlyNetCents: m, HourlyNetMilliCents: h}
+		}
+		out.ServerTypes[strings.ToLower(st.Name)] = byLoc
+	}
+	return out, nil
+}
+
 // AccountCurrency reports the billing currency GET /pricing declares for the
 // authenticated account ("EUR"/"USD").
 //
@@ -179,13 +245,9 @@ func (c *Client) do(ctx context.Context, method, url string, body []byte, out an
 // account would be wrong by an exchange rate — and would look entirely
 // reasonable while being wrong.
 func (c *Client) AccountCurrency(ctx context.Context) (string, error) {
-	var payload struct {
-		Pricing struct {
-			Currency string `json:"currency"`
-		} `json:"pricing"`
-	}
-	if err := c.do(ctx, http.MethodGet, c.BaseURL+"/pricing", nil, &payload); err != nil {
+	p, err := c.Pricing(ctx)
+	if err != nil {
 		return "", err
 	}
-	return payload.Pricing.Currency, nil
+	return p.Currency, nil
 }

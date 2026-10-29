@@ -73,6 +73,80 @@ hcloud-pricetag revert -dry-run
 hcloud-pricetag revert -yes
 ```
 
+### Setting a price by hand
+
+When the price comes from somewhere the bundled table cannot know — an
+invoice, a contract, a server type the table does not cover, a USD account —
+enter it directly:
+
+```sh
+hcloud-pricetag interactive
+```
+
+```
+account currency EUR, label namespace vaicoa.com
+
+    #  id         name                     type     loc    override
+    1  141232610  web-1                    cpx32    nbg1   -
+    2  141232611  db-1                     ccx33    fsn1   62.49/mo 0.1001/h EUR
+server (# or id, q to quit): 1
+
+server 141232610 web-1 (cpx32 in nbg1)
+  current labels  monthly -  hourly -  currency -
+  current override -
+  list price       35.49/mo  0.0569/h  EUR net
+enter net amounts as decimals (5.34, 0.0073); empty keeps, - clears, 0 is a price of zero
+monthly net: 5.34
+hourly net: 0.0086
+currency (EUR/USD) [EUR]:
+will write:
+  vaicoa.com/monthly-net-cents: (none) -> "534"
+  vaicoa.com/hourly-net-millicents: (none) -> "860"
+  vaicoa.com/price-currency: (none) -> "EUR"
+write these labels? [y/N]: y
+written
+```
+
+- Amounts are **net**, typed as decimals with a dot. The monthly and hourly
+  prices are independent; set either or both.
+- An empty answer keeps the current value. `-` **clears** it, which removes
+  the label so the reader falls back to the list price. `0` is not a clear:
+  it writes a price of zero. When both amounts are cleared, the currency
+  label goes too.
+- The currency defaults to, and must equal, the account's billing currency
+  from `/pricing`, since the reader ignores an override in any other.
+- Nothing is written until you answer `y`. The server is re-read right before
+  the write, so labels added in the meantime survive, and a server whose
+  type or location changed is not written.
+- `q` or end of input quits.
+
+**No rounding.** An amount with more decimals than its label can hold is
+refused, not rounded: monthly takes at most 2 decimals (cents), hourly at
+most 5 (milli-cents). `5.345` is refused as a monthly price and accepted as
+an hourly one (`534500`); `0.00725` is refused monthly and is `725` hourly.
+Trailing zeros are fine (`5.3400` is `534`). A rounded value is
+indistinguishable from a correct one once it sits in a label, so the tool
+makes you decide.
+
+There is no drift check against a plan here, because there is no plan: you
+are stating the price yourself. For the grandfathered-price case, prefer
+`plan` → `apply`.
+
+### Label namespace
+
+The keys live under a namespace, `vaicoa.com` by default:
+
+```sh
+hcloud-pricetag plan -namespace prices.example.org
+PRICETAG_NAMESPACE=prices.example.org hcloud-pricetag apply
+```
+
+The flag wins over `PRICETAG_NAMESPACE`, which wins over the default. Every
+command takes `-namespace` (`--namespace` works too). The namespace must be a
+lowercase DNS subdomain, as Hetzner requires for label prefixes. A plan file
+records its namespace, and `apply` refuses one made for a different
+namespace. `revert` only removes the keys of the namespace it runs with.
+
 ### Currency
 
 Hetzner bills in EUR or USD, fixed when the account is created. `plan` reads
@@ -92,13 +166,19 @@ Set `HCLOUD_API_BASE` to try the tool against a mock instead of the real API.
 
 ## What it writes
 
-Three labels, on the server:
+Three labels, on the server (shown with the default namespace):
 
 | Label | Unit | Example |
 |---|---|---|
-| `cloudviewer.app/monthly-net-cents` | cents, 1e-2 of the unit | `1399` → 13.99/month |
-| `cloudviewer.app/hourly-net-millicents` | milli-cents, 1e-5 of the unit | `2240` → 0.0224/hour |
-| `cloudviewer.app/price-currency` | ISO code | `EUR` |
+| `vaicoa.com/monthly-net-cents` | cents, 1e-2 of the unit | `1399` → 13.99/month |
+| `vaicoa.com/hourly-net-millicents` | milli-cents, 1e-5 of the unit | `2240` → 0.0224/hour |
+| `vaicoa.com/price-currency` | ISO code, `EUR` or `USD` | `EUR` |
+
+> **Changed:** earlier versions wrote `cloudviewer.app/…` keys. Those are no
+> longer written, read or reverted — there is no migration and no dual write.
+> Plan files from earlier versions carry the old keys and are refused by
+> `apply`; run `plan` again. Old labels left on a server can be removed by
+> hand, or with `revert -namespace cloudviewer.app`.
 
 The currency label is required, and the reader compares it against the
 project's own `/pricing` document rather than trusting it. An amount without a
@@ -106,7 +186,7 @@ stated currency is not an amount — and Hetzner allows moving a server between
 projects, where crossing a currency boundary re-prices it, leaving a stale
 label wrong twice over.
 
-Both are **net** EUR, excluding the primary IPv4 (which Hetzner prices
+Both are **net**, excluding the primary IPv4 (which Hetzner prices
 separately).
 
 **Net, not gross.** Hetzner's API reports both and bills on net, and the
@@ -140,7 +220,8 @@ current labels and adds to them.
   creation timestamp changed since the plan was made. A rescale between plan
   and apply is precisely the event that forfeits the old price.
 - Re-running either command changes nothing that is already correct.
-- `revert` removes only the three reserved keys.
+- `revert` removes only the three reserved keys of the selected namespace.
+- `interactive` writes one server at a time, each after a `y`.
 
 ## The price table
 
@@ -179,16 +260,17 @@ two invariants, writing nothing if either fails:
 No float touches a price anywhere in this repository. CI runs the generator and
 fails if the checked-in table differs.
 
-## Relationship to Cloud Viewer
+## Relationship to Vaicoa
 
-The label keys are namespaced to [Cloud Viewer][cv], which reads them and
-prefers them over the list price. The convention is not a standard, and the
-prefix says so honestly.
+The label keys are namespaced to [Vaicoa][vc] by default, which reads them and
+prefers them over the list price — for example for grandfathered prices. The
+convention is not a standard, and the prefix says so honestly; use
+`-namespace` for your own reader.
 
 The labels are inert to everything else — nothing else reads them, and Hetzner
 bills you what it bills you regardless.
 
-[cv]: https://cloudviewer.app
+[vc]: https://vaicoa.com
 
 ## License
 

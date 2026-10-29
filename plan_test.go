@@ -9,6 +9,8 @@ import (
 
 var cutoff = time.Date(2026, 6, 15, 6, 0, 0, 0, time.UTC)
 
+var testKeys, _ = KeysFor(DefaultNamespace)
+
 func testTable() *Table {
 	return &Table{
 		Source: "test", Currency: "EUR", Basis: "net", Effective: "2026-06-15T06:00:00Z",
@@ -35,7 +37,7 @@ func TestBuildPlanProposesOnlyPreCutoffServersWithAKnownPrice(t *testing.T) {
 		srv(2, "fresh", "cpx52", "fsn1", after, nil),
 		srv(3, "unknown-type", "cx22", "fsn1", before, nil),
 		srv(4, "unknown-loc", "cpx52", "sin", before, nil),
-	}, testTable(), cutoff, "EUR")
+	}, testTable(), cutoff, "EUR", testKeys)
 
 	if len(p.Servers) != 1 || p.Servers[0].ID != 1 {
 		t.Fatalf("proposed: %+v", p.Servers)
@@ -60,7 +62,7 @@ func TestBuildPlanProposesOnlyPreCutoffServersWithAKnownPrice(t *testing.T) {
 // The adjustment applies from the cutoff onwards, so a server created at the
 // exact instant is already on new pricing.
 func TestServerCreatedExactlyAtCutoffIsNotProposed(t *testing.T) {
-	p := BuildPlan([]Server{srv(1, "edge", "cpx52", "fsn1", cutoff, nil)}, testTable(), cutoff, "EUR")
+	p := BuildPlan([]Server{srv(1, "edge", "cpx52", "fsn1", cutoff, nil)}, testTable(), cutoff, "EUR", testKeys)
 	if len(p.Servers) != 0 {
 		t.Fatalf("proposed: %+v", p.Servers)
 	}
@@ -69,10 +71,10 @@ func TestServerCreatedExactlyAtCutoffIsNotProposed(t *testing.T) {
 func TestAlreadyLabelledServerIsSkipped(t *testing.T) {
 	before := cutoff.Add(-24 * time.Hour)
 	p := BuildPlan([]Server{srv(1, "done", "cpx52", "fsn1", before, map[string]string{
-		LabelMonthly:  "3649",
-		LabelHourly:   "5850",
-		LabelCurrency: "EUR",
-	})}, testTable(), cutoff, "EUR")
+		testKeys.Monthly:  "3649",
+		testKeys.Hourly:   "5850",
+		testKeys.Currency: "EUR",
+	})}, testTable(), cutoff, "EUR", testKeys)
 	if len(p.Servers) != 0 {
 		t.Fatalf("re-running must be a no-op, got %+v", p.Servers)
 	}
@@ -84,8 +86,8 @@ func TestAlreadyLabelledServerIsSkipped(t *testing.T) {
 func TestPartiallyLabelledServerIsStillProposed(t *testing.T) {
 	before := cutoff.Add(-24 * time.Hour)
 	p := BuildPlan([]Server{srv(1, "half", "cpx52", "fsn1", before, map[string]string{
-		LabelMonthly: "3649", // hourly missing
-	})}, testTable(), cutoff, "EUR")
+		testKeys.Monthly: "3649", // hourly missing
+	})}, testTable(), cutoff, "EUR", testKeys)
 	if len(p.Servers) != 1 {
 		t.Fatalf("a half-written override must be completed, got %+v", p.Servers)
 	}
@@ -114,16 +116,16 @@ func TestDriftDetectsRescaleRelocationAndIdentitySwap(t *testing.T) {
 // PUT /servers/{id} replaces the whole label map, so a merge bug would delete
 // the customer's own labels and nobody would notice for weeks.
 func TestMergePreservesForeignLabels(t *testing.T) {
-	e := PlanEntry{Labels: map[string]string{LabelMonthly: "3649", LabelHourly: "5850", LabelCurrency: "EUR"}}
+	e := PlanEntry{Labels: map[string]string{testKeys.Monthly: "3649", testKeys.Hourly: "5850", testKeys.Currency: "EUR"}}
 	merged := e.MergeLabels(map[string]string{
-		"cost-center": "platform",
-		"env":         "prod",
-		LabelMonthly:  "9999", // stale value must be replaced
+		"cost-center":    "platform",
+		"env":            "prod",
+		testKeys.Monthly: "9999", // stale value must be replaced
 	})
 	if merged["cost-center"] != "platform" || merged["env"] != "prod" {
 		t.Fatalf("foreign labels lost: %+v", merged)
 	}
-	if merged[LabelMonthly] != "3649" || merged[LabelHourly] != "5850" {
+	if merged[testKeys.Monthly] != "3649" || merged[testKeys.Hourly] != "5850" {
 		t.Fatalf("override not applied: %+v", merged)
 	}
 	if len(merged) != 5 {
@@ -132,11 +134,11 @@ func TestMergePreservesForeignLabels(t *testing.T) {
 }
 
 func TestStripOverridesKeepsEverythingElse(t *testing.T) {
-	stripped, changed := StripOverrides(map[string]string{
-		"cost-center": "platform",
-		LabelMonthly:  "3649",
-		LabelHourly:   "5850",
-		LabelCurrency: "EUR",
+	stripped, changed := StripOverrides(testKeys, map[string]string{
+		"cost-center":     "platform",
+		testKeys.Monthly:  "3649",
+		testKeys.Hourly:   "5850",
+		testKeys.Currency: "EUR",
 	})
 	if !changed {
 		t.Fatal("changed should be true")
@@ -144,7 +146,7 @@ func TestStripOverridesKeepsEverythingElse(t *testing.T) {
 	if len(stripped) != 1 || stripped["cost-center"] != "platform" {
 		t.Fatalf("stripped: %+v", stripped)
 	}
-	if _, changed := StripOverrides(map[string]string{"env": "prod"}); changed {
+	if _, changed := StripOverrides(testKeys, map[string]string{"env": "prod"}); changed {
 		t.Error("nothing to strip should report unchanged")
 	}
 }
@@ -169,9 +171,9 @@ func TestApplyWritesOnlyConfirmedEntries(t *testing.T) {
 	before := cutoff.Add(-24 * time.Hour)
 	plan := &Plan{Servers: []PlanEntry{
 		{ID: 1, Name: "yes", ServerType: "cpx52", Location: "fsn1", Created: before,
-			Labels: map[string]string{LabelMonthly: "3649"}, Confirmed: true},
+			Labels: map[string]string{testKeys.Monthly: "3649"}, Confirmed: true},
 		{ID: 2, Name: "no", ServerType: "cpx52", Location: "fsn1", Created: before,
-			Labels: map[string]string{LabelMonthly: "3649"}, Confirmed: false},
+			Labels: map[string]string{testKeys.Monthly: "3649"}, Confirmed: false},
 	}}
 	live := []Server{
 		srv(1, "yes", "cpx52", "fsn1", before, map[string]string{"env": "prod"}),
@@ -185,7 +187,7 @@ func TestApplyWritesOnlyConfirmedEntries(t *testing.T) {
 	if len(w.calls) != 1 {
 		t.Fatalf("wrote %d server(s), want 1: %+v", len(w.calls), w.calls)
 	}
-	if w.calls[1]["env"] != "prod" || w.calls[1][LabelMonthly] != "3649" {
+	if w.calls[1]["env"] != "prod" || w.calls[1][testKeys.Monthly] != "3649" {
 		t.Fatalf("payload: %+v", w.calls[1])
 	}
 	var written, skipped int
@@ -205,7 +207,7 @@ func TestApplyRefusesDriftedServer(t *testing.T) {
 	before := cutoff.Add(-24 * time.Hour)
 	plan := &Plan{Servers: []PlanEntry{{
 		ID: 1, Name: "rescaled", ServerType: "cpx52", Location: "fsn1", Created: before,
-		Labels: map[string]string{LabelMonthly: "3649"}, Confirmed: true,
+		Labels: map[string]string{testKeys.Monthly: "3649"}, Confirmed: true,
 	}}}
 	// Confirmed by a human, then rescaled before apply ran.
 	live := []Server{srv(1, "rescaled", "cpx62", "fsn1", before, nil)}
@@ -239,7 +241,7 @@ func TestApplyDryRunWritesNothing(t *testing.T) {
 	before := cutoff.Add(-24 * time.Hour)
 	plan := &Plan{Servers: []PlanEntry{{
 		ID: 1, Name: "yes", ServerType: "cpx52", Location: "fsn1", Created: before,
-		Labels: map[string]string{LabelMonthly: "3649"}, Confirmed: true,
+		Labels: map[string]string{testKeys.Monthly: "3649"}, Confirmed: true,
 	}}}
 	live := []Server{srv(1, "yes", "cpx52", "fsn1", before, nil)}
 	w := &fakeWriter{}
@@ -259,10 +261,10 @@ func TestApplyIsIdempotent(t *testing.T) {
 	before := cutoff.Add(-24 * time.Hour)
 	plan := &Plan{Servers: []PlanEntry{{
 		ID: 1, Name: "done", ServerType: "cpx52", Location: "fsn1", Created: before,
-		Labels: map[string]string{LabelMonthly: "3649", LabelHourly: "5850", LabelCurrency: "EUR"}, Confirmed: true,
+		Labels: map[string]string{testKeys.Monthly: "3649", testKeys.Hourly: "5850", testKeys.Currency: "EUR"}, Confirmed: true,
 	}}}
 	live := []Server{srv(1, "done", "cpx52", "fsn1", before, map[string]string{
-		LabelMonthly: "3649", LabelHourly: "5850", LabelCurrency: "EUR",
+		testKeys.Monthly: "3649", testKeys.Hourly: "5850", testKeys.Currency: "EUR",
 	})}
 	w := &fakeWriter{}
 	results, _ := Apply(context.Background(), w, plan, live, false)
@@ -276,7 +278,7 @@ func TestApplyIsIdempotent(t *testing.T) {
 
 func TestPlanRoundTripsThroughDisk(t *testing.T) {
 	before := cutoff.Add(-24 * time.Hour)
-	p := BuildPlan([]Server{srv(1, "legacy", "cpx52", "fsn1", before, nil)}, testTable(), cutoff, "EUR")
+	p := BuildPlan([]Server{srv(1, "legacy", "cpx52", "fsn1", before, nil)}, testTable(), cutoff, "EUR", testKeys)
 	path := t.TempDir() + "/plan.json"
 	if err := p.Save(path); err != nil {
 		t.Fatal(err)
@@ -288,7 +290,7 @@ func TestPlanRoundTripsThroughDisk(t *testing.T) {
 	if len(loaded.Servers) != 1 || loaded.Servers[0].ID != 1 {
 		t.Fatalf("loaded: %+v", loaded.Servers)
 	}
-	if loaded.Servers[0].Labels[LabelMonthly] != "3649" {
+	if loaded.Servers[0].Labels[testKeys.Monthly] != "3649" {
 		t.Fatalf("labels: %+v", loaded.Servers[0].Labels)
 	}
 	if !loaded.Cutoff.Equal(cutoff) {
@@ -305,24 +307,50 @@ func TestPlanRoundTripsThroughDisk(t *testing.T) {
 func TestOverrideWithoutCurrencyIsIncomplete(t *testing.T) {
 	before := cutoff.Add(-24 * time.Hour)
 	p := BuildPlan([]Server{srv(1, "legacy", "cpx52", "fsn1", before, map[string]string{
-		LabelMonthly: "3649", LabelHourly: "5850", // currency missing
-	})}, testTable(), cutoff, "EUR")
+		testKeys.Monthly: "3649", testKeys.Hourly: "5850", // currency missing
+	})}, testTable(), cutoff, "EUR", testKeys)
 	if len(p.Servers) != 1 {
 		t.Fatalf("a currency-less override must be completed, got %+v", p.Servers)
 	}
-	if p.Servers[0].Labels[LabelCurrency] != "EUR" {
+	if p.Servers[0].Labels[testKeys.Currency] != "EUR" {
 		t.Fatalf("labels: %+v", p.Servers[0].Labels)
 	}
 }
 
 func TestRevertRemovesTheCurrencyLabelToo(t *testing.T) {
-	stripped, changed := StripOverrides(map[string]string{
-		"env":         "prod",
-		LabelMonthly:  "3649",
-		LabelHourly:   "5850",
-		LabelCurrency: "EUR",
+	stripped, changed := StripOverrides(testKeys, map[string]string{
+		"env":             "prod",
+		testKeys.Monthly:  "3649",
+		testKeys.Hourly:   "5850",
+		testKeys.Currency: "EUR",
 	})
 	if !changed || len(stripped) != 1 || stripped["env"] != "prod" {
 		t.Fatalf("stripped: %+v", stripped)
+	}
+}
+
+func TestApplyRefusesPlanFromAnotherNamespace(t *testing.T) {
+	other, _ := KeysFor("example.org")
+	if err := (&Plan{Namespace: "example.org"}).CheckNamespace(other); err != nil {
+		t.Fatal(err)
+	}
+	if err := (&Plan{Namespace: "example.org"}).CheckNamespace(testKeys); err == nil {
+		t.Error("namespace mismatch accepted")
+	}
+	if err := (&Plan{}).CheckNamespace(testKeys); err == nil {
+		t.Error("a pre-namespace plan carries the retired keys and must be refused")
+	}
+}
+
+func TestBuildPlanUsesTheNamespace(t *testing.T) {
+	before := cutoff.Add(-24 * time.Hour)
+	p := BuildPlan([]Server{srv(1, "legacy", "cpx52", "fsn1", before, nil)}, testTable(), cutoff, "EUR", testKeys)
+	if p.Namespace != "vaicoa.com" || p.Servers[0].Labels["vaicoa.com/monthly-net-cents"] != "3649" {
+		t.Fatalf("plan: %+v", p)
+	}
+	for k := range p.Servers[0].Labels {
+		if strings.HasPrefix(k, "cloudviewer.app/") {
+			t.Errorf("retired key written: %s", k)
+		}
 	}
 }
