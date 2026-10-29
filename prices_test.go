@@ -118,9 +118,9 @@ func TestMonthlyIsNotDerivedFromHourly(t *testing.T) {
 // label is where it actually lives.
 func TestLabelsCarryTheCurrency(t *testing.T) {
 	table, _ := LoadTable("")
-	l := table.ServerTypes[0].Labels("EUR")
-	if l[LabelCurrency] != "EUR" {
-		t.Fatalf("currency label: %q — an amount without a currency is not an amount", l[LabelCurrency])
+	l := table.ServerTypes[0].Labels(testKeys, "EUR")
+	if l[testKeys.Currency] != "EUR" {
+		t.Fatalf("currency label: %q — an amount without a currency is not an amount", l[testKeys.Currency])
 	}
 	if len(l) != 3 {
 		t.Fatalf("labels: %+v", l)
@@ -130,14 +130,14 @@ func TestLabelsCarryTheCurrency(t *testing.T) {
 func TestLabelValuesRoundTrip(t *testing.T) {
 	table, _ := LoadTable("")
 	for _, e := range table.ServerTypes {
-		labels := e.Labels("EUR")
-		m, err := strconv.ParseInt(labels[LabelMonthly], 10, 64)
+		labels := e.Labels(testKeys, "EUR")
+		m, err := strconv.ParseInt(labels[testKeys.Monthly], 10, 64)
 		if err != nil || m != e.Old.MonthlyNetCents {
-			t.Errorf("%s monthly label %q does not round-trip", e.Name, labels[LabelMonthly])
+			t.Errorf("%s monthly label %q does not round-trip", e.Name, labels[testKeys.Monthly])
 		}
-		h, err := strconv.ParseInt(labels[LabelHourly], 10, 64)
+		h, err := strconv.ParseInt(labels[testKeys.Hourly], 10, 64)
 		if err != nil || h != e.Old.HourlyNetMilliCents {
-			t.Errorf("%s hourly label %q does not round-trip", e.Name, labels[LabelHourly])
+			t.Errorf("%s hourly label %q does not round-trip", e.Name, labels[testKeys.Hourly])
 		}
 	}
 }

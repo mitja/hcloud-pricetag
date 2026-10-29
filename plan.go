@@ -56,6 +56,9 @@ type SkippedServer struct {
 type Plan struct {
 	Comment    []string `json:"_comment"`
 	PriceTable string   `json:"price_table_source"`
+	// Namespace the label keys in this plan are under. apply refuses a plan
+	// whose namespace differs from the one it was asked to write.
+	Namespace string `json:"namespace"`
 	// Currency the proposed amounts are in, as reported by the account's own
 	// /pricing document.
 	Currency       string          `json:"currency"`
@@ -68,9 +71,10 @@ type Plan struct {
 // BuildPlan proposes an override for every server that predates the cutoff and
 // has a pre-adjustment price in the table. Everything else lands in Skipped
 // with a reason.
-func BuildPlan(servers []Server, table *Table, cutoff time.Time, currency string) Plan {
+func BuildPlan(servers []Server, table *Table, cutoff time.Time, currency string, keys LabelKeys) Plan {
 	p := Plan{
 		Comment:        planComment,
+		Namespace:      keys.Namespace,
 		Currency:       currency,
 		PriceTable:     table.Source,
 		Cutoff:         cutoff.UTC(),
@@ -95,7 +99,7 @@ func BuildPlan(servers []Server, table *Table, cutoff time.Time, currency string
 			})
 			continue
 		}
-		want := entry.Labels(currency)
+		want := entry.Labels(keys, currency)
 		if labelsAlreadySet(s.Labels, want) {
 			p.Skipped = append(p.Skipped, SkippedServer{
 				ID: s.ID, Name: s.Name, ServerType: s.Type, Location: s.Location,
@@ -160,12 +164,12 @@ func (e PlanEntry) MergeLabels(current map[string]string) map[string]string {
 	return out
 }
 
-// StripOverrides returns labels with both reserved keys removed.
-func StripOverrides(current map[string]string) (map[string]string, bool) {
+// StripOverrides returns labels with the three reserved keys removed.
+func StripOverrides(keys LabelKeys, current map[string]string) (map[string]string, bool) {
 	out := make(map[string]string, len(current))
 	changed := false
 	for k, v := range current {
-		if k == LabelMonthly || k == LabelHourly || k == LabelCurrency {
+		if k == keys.Monthly || k == keys.Hourly || k == keys.Currency {
 			changed = true
 			continue
 		}
@@ -180,6 +184,19 @@ func (p Plan) Save(path string) error {
 		return err
 	}
 	return os.WriteFile(path, append(raw, '\n'), 0o644)
+}
+
+// CheckNamespace refuses a plan made for a different label namespace than
+// the one apply is about to write. A plan without one predates configurable
+// namespaces and carries the dropped cloudviewer.app keys.
+func (p *Plan) CheckNamespace(keys LabelKeys) error {
+	if p.Namespace == "" {
+		return fmt.Errorf("plan has no label namespace (made by an older version, with the retired cloudviewer.app keys) — run plan again")
+	}
+	if p.Namespace != keys.Namespace {
+		return fmt.Errorf("plan was made for namespace %q, but this run writes %q — pass -namespace %s or run plan again", p.Namespace, keys.Namespace, p.Namespace)
+	}
+	return nil
 }
 
 func LoadPlan(path string) (*Plan, error) {

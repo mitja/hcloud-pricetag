@@ -11,6 +11,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"flag"
 	"fmt"
@@ -31,20 +32,31 @@ func main() {
 func usage() {
 	fmt.Fprint(os.Stderr, `hcloud-pricetag — label Hetzner Cloud servers with their grandfathered price
 
-  hcloud-pricetag plan    [-o FILE] [-prices FILE] [-cutoff TIME]
+  hcloud-pricetag plan    [-o FILE] [-prices FILE] [-cutoff TIME] [-namespace NS]
       Read your servers, propose an override for each one that predates the
       price adjustment, and write a plan file. Reads only; writes nothing to
       Hetzner.
 
-  hcloud-pricetag apply   [-plan FILE] [-dry-run]
+  hcloud-pricetag apply   [-plan FILE] [-dry-run] [-namespace NS]
       Write the labels for entries you marked "confirmed": true. Refuses any
       server that changed since the plan was made.
 
-  hcloud-pricetag revert  [-yes] [-dry-run]
+  hcloud-pricetag revert  [-yes] [-dry-run] [-namespace NS]
       Remove the override labels from every server that carries them.
+
+  hcloud-pricetag interactive  [-namespace NS]
+      Pick a server, see its current override and list price, type the net
+      monthly and/or hourly price (5.34, 0.0073), confirm, write. "-" clears
+      a price (removes the label); "0" sets a price of zero.
 
   hcloud-pricetag prices  [-prices FILE]
       Print the bundled price table.
+
+Label namespace
+  -namespace NS                 prefix of the three label keys, NS/monthly-net-cents,
+                                NS/hourly-net-millicents, NS/price-currency
+  PRICETAG_NAMESPACE=…          used when -namespace is not given
+                                default: `+DefaultNamespace+`
 
 Authentication
   HCLOUD_TOKEN=…                a read+write Hetzner Cloud API token
@@ -71,6 +83,8 @@ func run(args []string) error {
 		return cmdRevert(args[1:])
 	case "prices":
 		return cmdPrices(args[1:])
+	case "interactive":
+		return cmdInteractive(args[1:])
 	case "-h", "--help", "help":
 		usage()
 		return nil
@@ -105,7 +119,12 @@ func cmdPlan(args []string) error {
 	pricesPath := fs.String("prices", "", "price table to use instead of the bundled one")
 	cutoffStr := fs.String("cutoff", "", "RFC3339 cutoff; defaults to the table's effective time")
 	tokenFile := fs.String("token-file", "", "read the API token from this file")
+	nsFlag := namespaceFlag(fs)
 	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	keys, err := keysFromFlag(*nsFlag)
+	if err != nil {
 		return err
 	}
 
@@ -151,13 +170,13 @@ hand from your own records.`, currency, TableCurrency, currency)
 		return err
 	}
 
-	plan := BuildPlan(servers, table, cutoff, currency)
+	plan := BuildPlan(servers, table, cutoff, currency, keys)
 	if err := plan.Save(*out); err != nil {
 		return err
 	}
 
-	fmt.Printf("inspected %d server(s), cutoff %s, currency %s\n",
-		plan.TotalInspected, cutoff.Format(time.RFC3339), currency)
+	fmt.Printf("inspected %d server(s), cutoff %s, currency %s, namespace %s\n",
+		plan.TotalInspected, cutoff.Format(time.RFC3339), currency, keys.Namespace)
 	fmt.Printf("proposed  %d\n", len(plan.Servers))
 	for _, e := range plan.Servers {
 		fmt.Printf("  %-10d %-24s %-8s %-6s %8s -> %8s %s/month\n",
@@ -179,12 +198,20 @@ func cmdApply(args []string) error {
 	planPath := fs.String("plan", defaultPlanFile, "plan file to apply")
 	dryRun := fs.Bool("dry-run", false, "show what would be written, write nothing")
 	tokenFile := fs.String("token-file", "", "read the API token from this file")
+	nsFlag := namespaceFlag(fs)
 	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	keys, err := keysFromFlag(*nsFlag)
+	if err != nil {
 		return err
 	}
 
 	plan, err := LoadPlan(*planPath)
 	if err != nil {
+		return err
+	}
+	if err := plan.CheckNamespace(keys); err != nil {
 		return err
 	}
 	tok, err := token(*tokenFile)
@@ -233,7 +260,12 @@ func cmdRevert(args []string) error {
 	yes := fs.Bool("yes", false, "required: strip the override labels from every server that has them")
 	dryRun := fs.Bool("dry-run", false, "show what would change, write nothing")
 	tokenFile := fs.String("token-file", "", "read the API token from this file")
+	nsFlag := namespaceFlag(fs)
 	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	keys, err := keysFromFlag(*nsFlag)
+	if err != nil {
 		return err
 	}
 	if !*yes && !*dryRun {
@@ -253,7 +285,7 @@ func cmdRevert(args []string) error {
 
 	n := 0
 	for _, s := range servers {
-		stripped, changed := StripOverrides(s.Labels)
+		stripped, changed := StripOverrides(keys, s.Labels)
 		if !changed {
 			continue
 		}
@@ -290,6 +322,34 @@ func cmdPrices(args []string) error {
 			EURHour(e.Old.HourlyNetMilliCents), EURHour(e.New.HourlyNetMilliCents))
 	}
 	return nil
+}
+
+func cmdInteractive(args []string) error {
+	fs := flag.NewFlagSet("interactive", flag.ContinueOnError)
+	tokenFile := fs.String("token-file", "", "read the API token from this file")
+	nsFlag := namespaceFlag(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	keys, err := keysFromFlag(*nsFlag)
+	if err != nil {
+		return err
+	}
+	tok, err := token(*tokenFile)
+	if err != nil {
+		return err
+	}
+	it := &Interactive{
+		API:  NewClient(os.Getenv("HCLOUD_API_BASE"), tok),
+		Keys: keys,
+		In:   bufio.NewReader(os.Stdin),
+		Out:  os.Stdout,
+	}
+	return it.Run(context.Background())
+}
+
+func namespaceFlag(fs *flag.FlagSet) *string {
+	return fs.String("namespace", "", "label key namespace (env "+NamespaceEnv+", default "+DefaultNamespace+")")
 }
 
 func truncate(s string, n int) string {

@@ -10,32 +10,6 @@ import (
 	"time"
 )
 
-// Reserved label keys. This is the convention Cloud Viewer reads; the values
-// are integer strings, and the units are the whole point:
-//
-//	monthly  cents       1e-2 EUR   "3649"  -> 36.49 EUR/month
-//	hourly   milli-cents 1e-5 EUR   "5850"  -> 0.0585 EUR/hour
-//
-// NET, always. Hetzner's API reports both net and gross and bills on net;
-// Cloud Viewer stores net and applies VAT at display time. Note that Hetzner's
-// published price-adjustment page quotes GROSS (19% German VAT) — the bundled
-// table is converted, and Table.Validate refuses a table that is not net.
-//
-// Cents are too coarse for an hourly rate. Hetzner quotes hourly prices to
-// four decimals in EUR, so a rate of 0.0072 would land on 0.01 at cent
-// granularity — a 39% error, the same order as the bug this fixes. Every price
-// in the bundled table encodes exactly at both scales; the generator refuses
-// to emit one that would not (prices/gen/build_prices.py).
-const (
-	LabelMonthly = "cloudviewer.app/monthly-net-cents"
-	LabelHourly  = "cloudviewer.app/hourly-net-millicents"
-	// LabelCurrency says which currency the two amounts are in, and is
-	// required: an amount without a stated currency is not an amount. The
-	// reader compares it against the project's own /pricing document and
-	// ignores the override when they disagree.
-	LabelCurrency = "cloudviewer.app/price-currency"
-)
-
 // TableCurrency is the only billing currency the bundled table covers.
 // Hetzner's published adjustment page quotes EUR; no USD equivalent is
 // bundled, so a USD-billed account gets refused rather than mislabelled.
@@ -169,11 +143,11 @@ func (t *Table) Lookup(serverType, location string) (Entry, bool) {
 }
 
 // Labels renders the override labels for this entry's OLD price.
-func (e Entry) Labels(currency string) map[string]string {
+func (e Entry) Labels(keys LabelKeys, currency string) map[string]string {
 	return map[string]string{
-		LabelMonthly:  strconv.FormatInt(e.Old.MonthlyNetCents, 10),
-		LabelHourly:   strconv.FormatInt(e.Old.HourlyNetMilliCents, 10),
-		LabelCurrency: currency,
+		keys.Monthly:  strconv.FormatInt(e.Old.MonthlyNetCents, 10),
+		keys.Hourly:   strconv.FormatInt(e.Old.HourlyNetMilliCents, 10),
+		keys.Currency: currency,
 	}
 }
 
